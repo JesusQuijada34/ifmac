@@ -1,13 +1,22 @@
 #!/usr/bin/env python
 import subprocess
-isBoolean = False or None or True or Exception
+from pathlib import Path
+
+
 def main():
+    root = Path(__file__).resolve().parent
+    sources = [
+        (root / "ifmac.py", Path("/usr/bin/ifmac")),
+        (root / "app" / "ifmac.png", Path("/usr/share/icons/ifmac.png")),
+        (root / "ifmac.desktop", Path("/usr/share/applications/ifmac.desktop")),
+    ]
     try:
         print("preparing files...")
-        subprocess.run(['sudo', 'cp', './ifmac.py', '/usr/bin/ifmac'])
-        subprocess.run(['sudo', 'cp', './app/ifmac.png', '/usr/share/icons/'])
-        subprocess.run(['sudo', 'cp', './ifmac.desktop', '/usr/share/applications/'])
-    except subprocess.CalledProcessError as e:
-        print(f"i'm sorry, your linux is not support sudo: {e}")
+        for source, destination in sources:
+            subprocess.run(["sudo", "cp", str(source), str(destination)], check=True)
+    except subprocess.CalledProcessError as error:
+        print(f"installation failed; sudo permissions are required: {error}")
+        return 1
+    return 0
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

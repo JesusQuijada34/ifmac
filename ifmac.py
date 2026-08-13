@@ -3,7 +3,8 @@
 #!pod!#
 # 2025-07-05  Jesus Quijada  <jesusquijada@jesusquijada-3000-N200>
 
-import random
+import secrets
+import re as regex
 import subprocess
 import os
 import sys
@@ -31,6 +32,9 @@ def main():
         print(linux)
         show_profiles()
         profile = input(f"{b}============================================================\n{banu}{m}profile name to mask/unmask mac? : {re}").strip()
+        if not regex.fullmatch(r"[A-Za-z0-9_.:-]{1,15}", profile):
+            print(f"{banu}{r}invalid Linux interface name{re}")
+            return
         newmac = hexmac()
         print(f"{banu}{g}generated : {newmac}")
         changemac(profile, newmac)
@@ -39,15 +43,17 @@ def main():
     else:
         print(unknown)
 def hexmac():
-    # allows starring with a hexa.02 for warranty simplify and speed-up powers
-    mac = ['02']
-    for _ in range(5):
-        mac.append(format(random.randint(0x00, 0xFF), '02X'))
-    return ':'.join(mac)
+    """Generate a locally administered, unicast MAC address."""
+    octets = [0x02] + [secrets.randbelow(256) for _ in range(5)]
+    return ':'.join(f"{octet:02X}" for octet in octets)
 def show_profiles():
-    print(f"{banu}{g}profile available for mask/unmask:\n{b}============================================================{re}")
-    subprocess.run(['sudo', 'ip', 'link'])
+    print(f"{banu}{g}profile available for mask/unmask mac:\n{b}============================================================{re}")
+    subprocess.run(['ip', '-brief', 'link'], check=False)
 def changemac(profile, newmac):
+    if not regex.fullmatch(r"[A-Za-z0-9_.:-]{1,15}", profile or ""):
+        raise ValueError("invalid Linux interface name")
+    if not regex.fullmatch(r"(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}", newmac or ""):
+        raise ValueError("invalid MAC address")
     print(f"{banu}{y}changing mac on '{profile}' profile with a mask '{newmac}'...")
     try:
         print(f"{b}============================================================\n{banu}{r}power off profile '{profile}'...")
